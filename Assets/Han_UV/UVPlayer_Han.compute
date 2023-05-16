@@ -1,0 +1,38 @@
+// Each #kernel tells which function to compile; you can have many kernels
+#pragma kernel CSMain
+
+int width;
+int height;
+int photo_w;
+int photo_h;
+StructuredBuffer<uint> uv;
+Texture2D<float4> photo;
+Texture2D<float4> video;
+RWTexture2D<float4> output;
+
+[numthreads(8,8,1)]
+void CSMain(uint3 id : SV_DispatchThreadID)
+{
+    // TODO: insert actual code here!
+    float4 color = video[id.xy];
+
+    int i = (width * id.y) + id.x;
+    float r_1 = ((uv[i]) % 256);
+    float r_2 = ((uv[i] >> 8) % 256);
+    float g_1 = ((uv[i] >> 16) % 256);
+    float g_2 = ((uv[i] >> 24) % 256);
+    float R = r_1 + r_2 * 256;
+    float G = g_1 + g_2 * 256;
+
+    if (!(R == 0 && G == 0))
+    {
+        int photo_x = photo_w - R / 65535.0 * photo_w;
+        int photo_y = G / 65535.0 * photo_h;
+        int2 uv3 = int2(photo_x, photo_y);
+        float4 color3 = photo[uv3];
+        color = color3;
+    }
+    color.a = 1;
+
+    output[id.xy] = color;
+}
